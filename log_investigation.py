@@ -10,6 +10,8 @@ Parameters:
 """
 import log_analysis_lib as la
 import re
+import pandas as pd
+import os
 
 # Get the log file path from the command line
 # Because this is outside of any function, log_path is a global variable
@@ -40,9 +42,9 @@ def tally_port_traffic():
     # TODO: Complete function body per step 7
     portsDict = {}
 
-    regex = 'DST=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
-    tallyCount, capturedData = la.filter_log_by_regex(log_path, regex, ignore_case=True, print_summary=False, print_records=False)
-    for record in tallyCount:
+    regex = r'DPT=(\d{1,5})'
+    filteredRecords, capturedData = la.filter_log_by_regex(log_path, regex, ignore_case=True, print_summary=False, print_records=False)
+    for record in filteredRecords:
         addr = re.findall(regex, record)
         for ip in addr:
             if ip in portsDict:
@@ -62,7 +64,17 @@ def generate_port_traffic_report(port_number):
     """
     # TODO: Complete function body per step 8
     # Get data from records that contain the specified destination port
+    destPort = f'DPT=({port_number})'
+    captureColumns = r'(\b[A-Za-z]{3} \d{1,2}\b) (\d{2}:\d{2}:\d{2}).*SRC=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*DST=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*SPT=(\d{1,5}).*' + destPort
+    filteredRecords, extractedData = la.filter_log_by_regex(log_path, captureColumns, ignore_case=True, print_summary=False, print_records=False)
     # Generate the CSV report
+    extract_df = pd.DataFrame(extractedData, columns=('DATE', 'TIME', 'SRC IP', 'DST IP', 'SRC PORT', 'DST PORT'))
+    try:
+        os.mkdir('.\\Outputs')
+    except OSError:
+        pass
+    #Return path of orders directory
+    extract_df.to_csv(f'.\\Outputs\\destination_port_{port_number}_report.csv', index=False)
     return
 
 def generate_invalid_user_report():
