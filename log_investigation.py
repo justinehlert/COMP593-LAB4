@@ -40,16 +40,23 @@ def tally_port_traffic():
         dict: Dictionary of destination port number counts
     """
     # TODO: Complete function body per step 7
+
+    #Empty Dict to hold outputs
     portsDict = {}
 
     regex = r'DPT=(\d{1,5})'
     filteredRecords, capturedData = la.filter_log_by_regex(log_path, regex, ignore_case=True, print_summary=False, print_records=False)
+
+    #Iterating through filteredRecords to find ports.
     for record in filteredRecords:
+        #get a list of matching regex in records
         addr = re.findall(regex, record)
         for ip in addr:
             if ip in portsDict:
+                #if a port already exists in the dict, add one to the count value
                 portsDict[ip]+=1
             else:
+                #else start a new count at 1
                 portsDict[ip]=1
     print(portsDict)
 
@@ -69,12 +76,11 @@ def generate_port_traffic_report(port_number):
     filteredRecords, extractedData = la.filter_log_by_regex(log_path, captureColumns, ignore_case=True, print_summary=False, print_records=False)
     # Generate the CSV report
     extract_df = pd.DataFrame(extractedData, columns=('DATE', 'TIME', 'SRC IP', 'DST IP', 'SRC PORT', 'DST PORT'))
-    try:
-        os.mkdir('.\\Outputs')
-    except OSError:
-        pass
+
+    #Creating a folder to hold the report outputs if it does not already exist
+    dirName = makeDirectoryIfNotPresent('.\\Output_Reports')
     #Return path of orders directory
-    extract_df.to_csv(f'.\\Outputs\\destination_port_{port_number}_report.csv', index=False)
+    extract_df.to_csv(f'.\\{dirName}\\destination_port_{port_number}_report.csv', index=False)
     return
 
 def generate_invalid_user_report():
@@ -82,8 +88,17 @@ def generate_invalid_user_report():
     an attempt to login as an invalid user.
     """
     # TODO: Complete function body per step 10
+    captureColumns = r'(\b[A-Za-z]{3} \d{1,2}\b) (\d{2}:\d{2}:\d{2}).*Invalid user (\S+) from (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
     # Get data from records that show attempted invalid user login
+    filteredRecords, extractedData = la.filter_log_by_regex(log_path, captureColumns, ignore_case=True, print_summary=False, print_records=False)
     # Generate the CSV report
+    extract_df = pd.DataFrame(extractedData, columns=('DATE', 'TIME', 'USERNAME', 'IP Address'))
+    try:
+        os.mkdir('.\\Output_Reports')
+    except OSError:
+        pass
+    #Return path of orders directory
+    extract_df.to_csv(f'.\\Output_Reports\\invalid_users.csv', index=False)
     return
 
 def generate_source_ip_log(ip_address):
@@ -97,6 +112,18 @@ def generate_source_ip_log(ip_address):
     # Get all records that have the specified sourec IP address
     # Save all records to a plain text .log file
     return
+
+def makeDirectoryIfNotPresent(directoryName):
+    """Creates a new directory if it's not present
+    
+    Args: 
+        Path of the desired directory. Relative to the script or absolute
+    """
+    try:
+        os.mkdir(f'{directoryName}')
+    except OSError:
+        pass    
+    return directoryName
 
 if __name__ == '__main__':
     main()
