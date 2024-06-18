@@ -93,12 +93,9 @@ def generate_invalid_user_report():
     filteredRecords, extractedData = la.filter_log_by_regex(log_path, captureColumns, ignore_case=True, print_summary=False, print_records=False)
     # Generate the CSV report
     extract_df = pd.DataFrame(extractedData, columns=('DATE', 'TIME', 'USERNAME', 'IP Address'))
-    try:
-        os.mkdir('.\\Output_Reports')
-    except OSError:
-        pass
+    dirName = makeDirectoryIfNotPresent('.\\Output_Reports')
     #Return path of orders directory
-    extract_df.to_csv(f'.\\Output_Reports\\invalid_users.csv', index=False)
+    extract_df.to_csv(f'.\\{dirName}\\invalid_users.csv', index=False)
     return
 
 def generate_source_ip_log(ip_address):
@@ -109,8 +106,16 @@ def generate_source_ip_log(ip_address):
         ip_address (str): Source IP address
     """
     # TODO: Complete function body per step 11
+    ipMatch = f'{ip_address}'
     # Get all records that have the specified sourec IP address
+    filteredRecords, extractedData = la.filter_log_by_regex(log_path, ipMatch, ignore_case=True, print_summary=False, print_records=False)
     # Save all records to a plain text .log file
+    
+    dirName = makeDirectoryIfNotPresent('.\\Output_Reports')
+    logFile = open(f'{dirName}\\source_ip_{re.sub(r'\.', '_', ip_address)}.log', 'w')
+    for line in filteredRecords:
+        logFile.write(f'{line}\n')
+    logFile.close()
     return
 
 def makeDirectoryIfNotPresent(directoryName):
